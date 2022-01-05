@@ -9,12 +9,21 @@ data "aws_ami" "ubuntu" {
   
 }
 
+#ec2 keypair
+
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDgi0ogjGnJno8zou2pk9YuSh5I8KxRFXh4Z0CYrMYph7tmi5Er+pfKOSWblUo/2SolCFgn8p+xg+a6jIac07aWkWi78eajaqIPIZhFxPiWw20v0rjCNdmZB+m9ZOxUNzhsUDkaIxZ+xhKjKNpcxGqqhpLGBOx1ZYAdtG5I+CxX2a+uZV0ixXB+Cd2zCIRg3/lfvsTCx7ERa4rt6pd7ngQZ0fKc6gX7yFnWxPo0qTi64dtD77qeLAUB6n+RYqQnyB6kXn5L+j9L6spK7lfvKoZwtmALAdEVFkGsGw82Bd2yJt61yiocU0TWnY2hYw13IuXg78U+fA3o6w7dFnttfzW7 kuba"
+}
+
 #aws_launch_configuration
 
 resource "aws_launch_configuration" "production" {
   name          = "production"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
+  key_name = "${aws_key_pair.deployer.key_name}"
+  security_groups = [aws_security_group.production-ec2.id]
   
 }
 
@@ -29,7 +38,7 @@ resource "aws_autoscaling_group" "production" {
   desired_capacity          = 2
   force_delete              = true
   launch_configuration      = aws_launch_configuration.production.name
-  vpc_zone_identifier       = ["subnet-06708642c2900872c"]
+  vpc_zone_identifier       = [aws_subnet.public_subnet_01.id,aws_subnet.public_subnet_02.id]
 
   
   tag {
